@@ -1,2 +1,3 @@
 # libnn-cpp
-A project for applying what I learn in Deep Learning theory.
+A library particularly designed to apply what I have learnt in DL theory
+
