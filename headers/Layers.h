@@ -8,12 +8,11 @@ enum class ActivationFunction {
     TANH
 };
 
-class Layer {
+class Linear {
 public:
-    Layer(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize = true);
+    Linear(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize = true);
 
     void forward(const Eigen::VectorXf& inputVec, bool isTraining);
-    void modifyDropout(float p = 1.0f);
     const Eigen::VectorXf& getOutput() const;
     int getnumOutputs() const;
 
