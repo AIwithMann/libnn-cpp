@@ -1,78 +1,84 @@
-#include <iostream>
-#include <string>
+#include "Layer.h"
 #include <cmath>
 #include <random>
-#include <Eigen/Dense>
+#include<Eigen/Dense>
+#include <stdexcept>
 
-std::random_device rd;
-std::mt19937 gen(rd());
+static std::random_device rd;
+static std::mt19937 gen(rd());
 
-enum class ActivationFunction {
-    RELU,
-    SIGMOID,
-    TANH
-};
-enum class Loss{
-    CROSSENTROPY,
-    MEANSQUAREDERROR,
-    MEANABSOLUTEERROR
-};
+Layer::Layer(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize)
+    : numInputs(numInputs), numOutputs(numOutputs), activation(activationFn), dropoutRate(0.1f) {
 
-class Layer{
-private:
-    int numInputs;
-    int numOutputs;
-    float dropoutRate = 0.1;
+    weights = Eigen::MatrixXf::Zero(numOutputs, numInputs);
+    biases = Eigen::VectorXf::Zero(numOutputs);
 
-    Eigen::MatrixXf weights; 
-    Eigen::VectorXf biases;
-    
-    Eigen::VectorXf input;
-    Eigen::VectorXf output;
-
-    ActivationFunction activation;
-
-
-    static float relu(float x) {
-        return x > 0 ? x : 0;
+    if (initialize) {
+        std::normal_distribution<float> dist(0.0f, 1.0f / std::sqrt(numInputs));
+        for (int i = 0; i < weights.rows(); ++i)
+            for (int j = 0; j < weights.cols(); ++j)
+                weights(i, j) = dist(gen);
     }
 
-    static float sigmoid(float x) {
-        return 1.0f / (1.0f + std::exp(-x));
-    }
+    output = Eigen::VectorXf::Zero(numOutputs);
+}
 
-    static float tanh_fn(float x) {
-        return std::tanh(x);
-    }
+void Layer::forward(const Eigen::VectorXf& inputVec, bool isTraining) {
+    if (inputVec.size() != numInputs)
+        throw std::invalid_argument("Input vector size does not match layer input size.");
 
-    void applyActivation() {
-        for (int i = 0; i < output.size(); ++i) {
-            switch (activation) {
-                case ActivationFunction::RELU:
-                    output[i] = relu(output[i]);
-                    break;
-                case ActivationFunction::SIGMOID:
-                    output[i] = sigmoid(output[i]);
-                    break;
-                case ActivationFunction::TANH:
-                    output[i] = tanh_fn(output[i]);
-                    break;
-                default:
-                    std::cerr << "Unknown activation function.\n";
-            }
+    input = inputVec;
+    output = (weights * input + biases);
+    applyActivation();
+
+    if (isTraining) {
+        applyDropout();
+    }
+}
+
+void Layer::modifyDropout(float p) {
+    if (p < 0.0f || p > 1.0f)
+        throw std::invalid_argument("Dropout rate must be in [0, 1]");
+    dropoutRate = p;
+}
+
+const Eigen::VectorXf& Layer::getOutput() const {
+    return output;
+}
+
+int Layer::getnumOutputs() const {
+    return numOutputs;
+}
+
+void Layer::applyActivation() {
+    switch(this->activation){
+        case ActivationFunction::RELU:
+            output = output.array().max(0.0f);
+            break;
+        case ActivationFunction::SIGMOID:
+            output = (1.0f / (1.0f + (-output.array()).exp())).matrix();
+            break;
+        case ActivationFunction::TANH:
+            output = output.array().tanh();
+            break;
+        default:
+            throw std::invalid_argument("Activation function is not from 'RELU', 'SIGMOID' or 'TANH'");
+
+    }
+}
+
+void Layer::applyDropout() {
+    if (dropoutRate <= 0.0f || dropoutRate >= 1.0f)
+        return;
+
+    std::bernoulli_distribution keepProb(1.0f - dropoutRate);
+    for (int i = 0; i < output.size(); ++i) {
+        if (!keepProb(gen)) {
+            output[i] = 0.0f;
+        } else {
+            output[i] /= (1.0f - dropoutRate);  // Inverted dropout
         }
     }
+}
 
-    void applyDropout() {
-        if (dropoutRate <= 0.0f || dropoutRate >= 1.0f) return;
 
-        std::bernoulli_distribution keepProb(1.0f - dropoutRate);
-        for (int i = 0; i < output.size(); ++i) {
-            if (!keepProb(gen)) {
-                output[i] = 0.0f;
-            } else {
-                output[i] /= (1.0f - dropoutRate);
-            }
-        }
-    }
-};
