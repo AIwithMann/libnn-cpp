@@ -1,4 +1,4 @@
-#include "Layer.h"
+#include "Layers.h"
 #include <cmath>
 #include <random>
 #include<Eigen/Dense>
@@ -7,7 +7,7 @@
 static std::random_device rd;
 static std::mt19937 gen(rd());
 
-Layer::Layer(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize)
+Linear::Linear(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize)
     : numInputs(numInputs), numOutputs(numOutputs), activation(activationFn), dropoutRate(0.1f) {
 
     weights = Eigen::MatrixXf::Zero(numOutputs, numInputs);
@@ -23,7 +23,7 @@ Layer::Layer(int numInputs, int numOutputs, ActivationFunction activationFn, boo
     output = Eigen::VectorXf::Zero(numOutputs);
 }
 
-void Layer::forward(const Eigen::VectorXf& inputVec, bool isTraining) {
+void Linear::forward(const Eigen::VectorXf& inputVec, bool isTraining) {
     if (inputVec.size() != numInputs)
         throw std::invalid_argument("Input vector size does not match layer input size.");
 
@@ -36,21 +36,15 @@ void Layer::forward(const Eigen::VectorXf& inputVec, bool isTraining) {
     }
 }
 
-void Layer::modifyDropout(float p) {
-    if (p < 0.0f || p > 1.0f)
-        throw std::invalid_argument("Dropout rate must be in [0, 1]");
-    dropoutRate = p;
-}
-
-const Eigen::VectorXf& Layer::getOutput() const {
+const Eigen::VectorXf& Linear::getOutput() const {
     return output;
 }
 
-int Layer::getnumOutputs() const {
+int Linear::getnumOutputs() const {
     return numOutputs;
 }
 
-void Layer::applyActivation() {
+void Linear::applyActivation() {
     switch(this->activation){
         case ActivationFunction::RELU:
             output = output.array().max(0.0f);
@@ -67,7 +61,7 @@ void Layer::applyActivation() {
     }
 }
 
-void Layer::applyDropout() {
+void Linear::applyDropout() {
     if (dropoutRate <= 0.0f || dropoutRate >= 1.0f)
         return;
 
@@ -80,5 +74,3 @@ void Layer::applyDropout() {
         }
     }
 }
-
-
