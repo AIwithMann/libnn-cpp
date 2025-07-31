@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <vector>
+#include <string>
 
 enum class ActivationFunction {
     RELU,
@@ -8,26 +10,31 @@ enum class ActivationFunction {
     TANH
 };
 
-class Linear {
+class Layer {
+protected:
+    bool isTraining = true;
+    Eigen::MatrixXf inputCache;
+    Eigen::MatrixXf input;
+    Eigen::MatrixXf output;
+    
 public:
-    Linear(int numInputs, int numOutputs, ActivationFunction activationFn, bool initialize = true);
+    virtual ~Layer() = default;
+    virtual void setTraining(bool mode);
+    virtual Eigen::MatrixXf forward(const Eigen::MatrixXf& input);
+    virtual Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutput);
+    virtual void update(float learning_rate);
+    virtual std::vector<Eigen::MatrixXf*> getParameters();
+    virtual std::vector<Eigen::MatrixXf*> getGradients();
+};
 
-    void forward(const Eigen::VectorXf& inputVec, bool isTraining);
-    const Eigen::VectorXf& getOutput() const;
-    int getnumOutputs() const;
-
+class Linear:public Layer{
 private:
-    int numInputs;
-    int numOutputs;
-    float dropoutRate;
-
-    Eigen::MatrixXf weights;
-    Eigen::VectorXf biases;
-    Eigen::VectorXf input;
-    Eigen::VectorXf output;
-
-    ActivationFunction activation;
-
-    void applyActivation();
-    void applyDropout();
+    Eigen::MatrixXf W, B, wGrad, bGrad;
+public:
+    inline Linear(int nInputs, int nOutputs, float low, float high);
+    inline ~Linear()=default;
+    inline Eigen::MatrixXf forward(const Eigen::MatrixXf& input);
+    inline Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutputs);
+    inline std::vector<Eigen::MatrixXf*> getParameters();
+    inline std::vector<Eigen::MatrixXf*> getGradients();
 };
