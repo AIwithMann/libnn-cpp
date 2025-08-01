@@ -13,9 +13,8 @@ enum class ActivationFunction {
 class Layer {
 protected:
     bool isTraining = true;
-    Eigen::MatrixXf inputCache;
-    Eigen::MatrixXf input;
-    Eigen::MatrixXf output;
+    Eigen::MatrixXf inputCache; //Batchsize * nInputs
+    Eigen::MatrixXf output; //Batchsize * nOutputs
     
 public:
     virtual ~Layer() = default;
@@ -29,9 +28,11 @@ public:
 
 class Linear:public Layer{
 private:
-    Eigen::MatrixXf W, B, wGrad, bGrad;
+    Eigen::MatrixXf W, B, wGrad, bGrad,dropoutMask;
+    float dropout;
+    inline void applyDropout(Eigen::MatrixXf& Z);
 public:
-    inline Linear(int nInputs, int nOutputs, float low, float high);
+    inline Linear(int nInputs, int nOutputs, float low, float high, float dropout);
     inline ~Linear()=default;
     inline Eigen::MatrixXf forward(const Eigen::MatrixXf& input);
     inline Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutputs);
