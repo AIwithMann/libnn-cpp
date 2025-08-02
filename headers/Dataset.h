@@ -9,25 +9,26 @@
 #include<algorithm>
 #include<optional>
 
-bool shapeMismatch(Eigen::MatrixXf x, Eigen::MatrixXf y);
+bool shapeMismatch(const Eigen::MatrixXf& X, const Eigen::MatrixXf& Y);
 
 class Dataset{
 private:
     int numSamples;
     int numClasses;
     int batchSize;
-    Eigen::MatrixXf X;
-    Eigen::MatrixXf Y;
+    Eigen::MatrixXf& X;
+    Eigen::MatrixXf& Y;
     bool shuffle;
 
     struct Batch{
         Eigen::MatrixXf batchX;
         Eigen::MatrixXf batchY;
     };
+    std::vector<Batch&> Batches;
 
 public:
-    Dataset(Eigen::MatrixXf Samples, Eigen::MatrixXf Labels, bool Shuffle, int batchS);
-    inline int getBatchSize() const;
-    inline Batch getBatch(int batchidx) const;
-    inline void shuffleData(std::optional<unsigned int> seed = std::nullopt);
+    Dataset(const Eigen::MatrixXf Samples, const Eigen::MatrixXf Labels, bool Shuffle, int batchS);
+    int getBatchSize() const;
+    Batch getBatch(int batchidx) const;
+    void shuffleData(std::optional<unsigned int> seed = std::nullopt);
 };
