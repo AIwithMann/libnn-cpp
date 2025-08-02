@@ -4,22 +4,16 @@
 #include <random>
 #include <algorithm>
 
-bool shapeMismatch(Eigen::MatrixXf x, Eigen::MatrixXf y) {
-    return x.rows() != y.rows();
+bool shapeMismatch(const Eigen::MatrixXf& X, Eigen::MatrixXf& Y) {
+    return X.rows() != Y.rows();
 }
 
-Dataset::Dataset(Eigen::MatrixXf Samples, Eigen::MatrixXf Labels, bool Shuffle, int batchS) {
+Dataset::Dataset(Eigen::MatrixXf Samples, Eigen::MatrixXf Labels,bool Shuffle, int batchS): X(Samples), Y(Labels),shuffle(Shuffle),batchSize(batchS),numSamples(Samples.rows()),numClasses(Labels.cols()){
     if (shapeMismatch(Samples, Labels)) {
         throw std::logic_error("Shape mismatch");
     }
-    this->X = Samples;
-    this->Y = Labels;
-    this->shuffle = Shuffle;
-    this->batchSize = batchS;
-
-    numSamples = Samples.rows();
-    numClasses = Labels.cols();
 }
+
 
 int Dataset::getBatchSize() const {
     return batchSize;
@@ -54,3 +48,4 @@ void Dataset::shuffleData(std::optional<unsigned int> seed) {
     X = xShuffled;
     Y = yShuffled;
 }
+
