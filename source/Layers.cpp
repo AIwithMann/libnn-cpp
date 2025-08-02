@@ -30,7 +30,7 @@ void Linear::applyDropout(Eigen::MatrixXf& Z) {
     Z = Z.cwiseProduct(dropoutMask);
 }
 
-Eigen::MatrixXf Linear::forward(const Eigen::MatrixXf& input) {
+Eigen::MatrixXf& Linear::forward(const Eigen::MatrixXf& input) {
     if (input.rows() != W.cols()) {
         throw std::invalid_argument(
             "Linear::forward - Expected input rows = " + std::to_string(W.cols()) +
@@ -40,15 +40,15 @@ Eigen::MatrixXf Linear::forward(const Eigen::MatrixXf& input) {
 
     inputCache = input;
     Eigen::MatrixXf Z = (W * input).colwise() + B.col(0);
-
-    if (isTraining && dropout > 0.0f)
-        applyDropout(Z);
-
     output = Z;
     return output;
 }
 
-
+Eigen::MatrixXf Linear::backward(const Eigen::MatrixXf& gradOutput){
+    wGrad = gradOutput * inputCache.transpose();
+    bGrad = gradOutput.rowwise().sum();
+    return W.transpose() * gradOutput;
+}
 std::vector<Eigen::MatrixXf*> Linear::getParameters() {
     return { &W, &B };
 }
@@ -57,13 +57,17 @@ std::vector<Eigen::MatrixXf*> Linear::getGradients() {
     return { &wGrad, &bGrad };
 }
 
-Eigen::MatrixXf ReLU::forward(const Eigen::MatrixXf& input) {
+Eigen::MatrixXf& ReLU::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
-    output = input.array().max(0.0f);
-    return output;
+    this->output = input.array().max(0.0f);
+    return this->output;
 }
 
-Eigen::MatrixXf Sigmoid::forward(const Eigen::MatrixXf& input) {
+Eigen::MatrixXf ReLU::backward(const Eigen::MatrixXf& gradOutput) {
+    return gradOutput.array() * (output.array() > 0.0f).cast<float>();
+}
+
+Eigen::MatrixXf& Sigmoid::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
     output = input.unaryExpr([](float x) {
         if (x >= 0) return 1.0f / (1.0f + std::exp(-x));
@@ -73,9 +77,17 @@ Eigen::MatrixXf Sigmoid::forward(const Eigen::MatrixXf& input) {
     return output;
 }
 
-Eigen::MatrixXf Tanh::forward(const Eigen::MatrixXf& input) {
+Eigen::MatrixXf Sigmoid::backward(const Eigen::MatrixXf& gradOutput){
+    auto sig = output.array();
+    return gradOutput.array() * (sig * (1 - sig));
+}
+
+Eigen::MatrixXf& Tanh::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
     output = input.array().tanh();
     return output;
 }
 
+Eigen::MatrixXf Tanh::backward(const Eigen::MatrixXf& gradOutputs){
+    return gradOutputs.array() * (1 - output.array().square());
+}
