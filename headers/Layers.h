@@ -13,7 +13,7 @@ public:
     virtual ~Layer() = default;
 
     virtual void setTraining(bool mode);
-    virtual Eigen::MatrixXf forward(const Eigen::MatrixXf& input) = 0;
+    virtual Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) = 0;
     virtual Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutput) = 0;
     virtual void update(float learningRate) {}
     virtual std::vector<Eigen::MatrixXf*> getParameters() { return {}; }
@@ -32,7 +32,7 @@ private:
 public:
     Linear(int nInputs, int nOutputs, float dropout = 0.0f);
 
-    Eigen::MatrixXf forward(const Eigen::MatrixXf& input) override;
+    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) override;
     Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutputs) override;
     void update(float learningRate) override;
 
@@ -42,19 +42,19 @@ public:
 
 class ReLU : public Layer {
 public:
-    Eigen::MatrixXf forward(const Eigen::MatrixXf& input) override;
+    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) override;
     Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutput) override;
 };
 
 class Sigmoid : public Layer {
 public:
-    Eigen::MatrixXf forward(const Eigen::MatrixXf& input) override;
+    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) override;
     Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutput) override;
 };
 
 class Tanh : public Layer {
 public:
-    Eigen::MatrixXf forward(const Eigen::MatrixXf& input) override;
+    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) override;
     Eigen::MatrixXf backward(const Eigen::MatrixXf& gradOutput) override;
 };
 
