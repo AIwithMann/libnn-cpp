@@ -57,7 +57,6 @@ std::vector<Eigen::MatrixXf*> Linear::getGradients() {
     return { &wGrad, &bGrad };
 }
 
-\
 Eigen::MatrixXf ReLU::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
     output = input.array().max(0.0f);
