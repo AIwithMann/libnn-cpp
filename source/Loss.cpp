@@ -8,28 +8,25 @@ enum class Loss{
     CATEGORICAL_CROSS_ENTROPY
 };
 
-bool shapeMismatch(const Eigen::VectorXf& True, const Eigen::VectorXf& Predicted){
-    return True.size() != Predicted.size();
-}
 bool shapeMismatch(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted){
     return True.rows() != Predicted.rows() || True.cols() != Predicted.cols();
 }
 
-inline float MSE(const Eigen::VectorXf& True, const Eigen::VectorXf& Predicted){
+inline float MSE(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted){
     if (shapeMismatch(True, Predicted)){
         throw std::logic_error("shape mismatch");
     }
     return (True - Predicted).array().square().mean();
 }
 
-inline float MAE(const Eigen::VectorXf& True, const Eigen::VectorXf& Predicted){
+inline float MAE(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted){
     if (shapeMismatch(True, Predicted)){
         throw std::logic_error("shape mismatch");
     }
     return (True - Predicted).array().abs().mean();
 }
 
-inline float BinaryCE(const Eigen::VectorXf& True, const Eigen::VectorXf& Predicted){
+inline float BinaryCE(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted){
     if (shapeMismatch(True, Predicted)){
         throw std::logic_error("shape mismatch");
     }
