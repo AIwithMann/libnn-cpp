@@ -31,4 +31,5 @@ public:
     int getBatchSize() const;
     Batch getBatch(int batchidx) const;
     void shuffleData(std::optional<unsigned int> seed = std::nullopt);
+    int getNumSamples() const;
 };
