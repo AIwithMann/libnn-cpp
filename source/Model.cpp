@@ -1,6 +1,6 @@
 #include "Model.h"
 #include "Dataset.h"
-
+#include "Optimizer.h"
 Model::Model(int nInputs, int nOutputs,Dataset& ds): numInputs(nInputs), numOutputs(nOutputs), dataset(ds){}
 
 void Model::setTraining(bool mode){ this->isTraining = mode; }
@@ -18,7 +18,7 @@ Eigen::MatrixXf& Model::forward(Eigen::MatrixXf& X){
 }
 
 float Model::calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y){
-    switch (lossType){
+    switch(lossType){
     case Loss::MSE:
         return MSE(Y, Ypred);
     
@@ -32,7 +32,34 @@ float Model::calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y){
         return MultiCE(Y,Ypred);
     
     default:
-        throw std::invalid_argument("Loss type must be from MSE, MAE, BINARY_CROSS_ENTROPY or CATEGORICAL_CROSS_ENTROPY");
+        throw std::invalid_argument("Loss    type must be from MSE, MAE, BINARY_CROSS_ENTROPY or CATEGORICAL_CROSS_ENTROPY");
     }
 }
 
+std::vector<std::shared_ptr<Layer>>& Model::getLayers(){
+    return this->Layers;
+}
+
+void Model::backward(size_t batchIdx){
+    Eigen::MatrixXf grad;
+    switch(lossType){
+        case Loss::MSE:
+            grad =  MSEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
+            break;
+        case Loss::MAE:
+            grad = MAEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
+            break;
+        case Loss::BINARY_CROSS_ENTROPY:
+            grad = BinaryCEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
+            break;
+        case Loss::CATEGORICAL_CROSS_ENTROPY:
+            grad = MultiCEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
+            break;
+        default:
+            throw std::invalid_argument("Loss type must be from MSE, MAE, BINARY_CROSS_ENTROPY or CATEGORICAL_CROSS_ENTROPY");
+    }
+    for(size_t i = numLayers-1; i>=0; --i){
+        grad = Layers[i]->backward(grad);
+    }
+    
+}
