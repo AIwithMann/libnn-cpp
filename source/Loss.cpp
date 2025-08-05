@@ -46,9 +46,47 @@ inline float MultiCE(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predict
     }
 
     const float eps = 1e-7f;
-    Eigen::ArrayXXf Y_hat = Predicted.array().min(1.0f - eps).max(eps);
-    Eigen::ArrayXXf Y = True.array();
-    Eigen::ArrayXXf log_probs = Y * Y_hat.log();
+    Eigen::ArrayXf Y_hat = Predicted.array().min(1.0f - eps).max(eps);
+    Eigen::ArrayXf Y = True.array();
+    Eigen::ArrayXf log_probs = Y * Y_hat.log();
 
     return -log_probs.rowwise().sum().mean(); 
+}
+
+inline Eigen::MatrixXf MSEgrad(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted, int bSize){
+    if (shapeMismatch(True, Predicted)){
+        throw std::logic_error("shape mismatch");
+    }
+    Eigen::ArrayXf grad = Predicted.array() - True.array();
+    grad *= 2;
+    grad /= bSize;
+    return grad.matrix();
+}
+
+inline Eigen::MatrixXf MAEgrad(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted, int bSize){
+    if (shapeMismatch(True, Predicted)){
+        throw std::logic_error("shape mismatch");
+    }
+    Eigen::ArrayXf grad = Predicted - True;
+    grad = grad.sign();
+    grad /= bSize;
+    return grad.matrix();
+}
+
+inline Eigen::MatrixXf BinaryCEgrad(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted, int bSize){
+    if (shapeMismatch(True, Predicted)){
+        throw std::logic_error("shape mismatch");
+    }
+    Eigen::ArrayXf grad = (Predicted.array() - True.array())/Predicted.array()* (1- Predicted.array());
+    grad /= bSize;
+    return grad.matrix();
+}
+
+inline Eigen::MatrixXf MultiCEgrad(const Eigen::MatrixXf& True, const Eigen::MatrixXf& Predicted, int bSize){
+    if (shapeMismatch(True, Predicted)){
+        throw std::logic_error("shape mismatch");
+    }
+    Eigen::ArrayXXf grad = Predicted.array() - True.array();
+    grad /= bSize;
+    return grad.matrix();
 }
