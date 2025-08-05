@@ -50,12 +50,14 @@ Eigen::MatrixXf Linear::backward(const Eigen::MatrixXf& gradOutput){
     return W.transpose() * gradOutput;
 }
 std::vector<Eigen::MatrixXf*> Linear::getParameters() {
-    return { &W, &B };
+    return {&W, &B};
 }
 
 std::vector<Eigen::MatrixXf*> Linear::getGradients() {
-    return { &wGrad, &bGrad };
+    return {&wGrad, &bGrad};
 }
+
+bool Linear::isTrainable() const{ return istrainable;}
 
 Eigen::MatrixXf& ReLU::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
@@ -66,6 +68,8 @@ Eigen::MatrixXf& ReLU::forward(const Eigen::MatrixXf& input) {
 Eigen::MatrixXf ReLU::backward(const Eigen::MatrixXf& gradOutput) {
     return gradOutput.array() * (output.array() > 0.0f).cast<float>();
 }
+
+bool ReLU::isTrainable()const { return istrainable; }
 
 Eigen::MatrixXf& Sigmoid::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
@@ -81,6 +85,7 @@ Eigen::MatrixXf Sigmoid::backward(const Eigen::MatrixXf& gradOutput){
     auto sig = output.array();
     return gradOutput.array() * (sig * (1 - sig));
 }
+bool Sigmoid::isTrainable()const { return istrainable; }
 
 Eigen::MatrixXf& Tanh::forward(const Eigen::MatrixXf& input) {
     inputCache = input;
@@ -91,3 +96,4 @@ Eigen::MatrixXf& Tanh::forward(const Eigen::MatrixXf& input) {
 Eigen::MatrixXf Tanh::backward(const Eigen::MatrixXf& gradOutputs){
     return gradOutputs.array() * (1 - output.array().square());
 }
+bool Tanh::isTrainable()const { return istrainable; }
