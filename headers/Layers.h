@@ -41,6 +41,8 @@ public:
     bool isTrainable() const override{ return istrainable; }
     std::vector<Eigen::MatrixXf*> getParameters() override;
     std::vector<Eigen::MatrixXf*> getGradients() override;
+    int getNumOutputs() const { return W.rows(); }
+    int getNumInputs() const { return W.cols(); }
 };
 
 class ReLU : public Layer {
