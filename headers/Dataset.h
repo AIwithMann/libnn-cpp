@@ -10,7 +10,11 @@
 #include<optional>
 
 bool shapeMismatch(const Eigen::MatrixXf& X, const Eigen::MatrixXf& Y);
-
+struct Batch{
+    Eigen::MatrixXf batchX;
+    Eigen::MatrixXf batchY;
+    size_t batchSize;
+};
 class Dataset{
 private:
     int numSamples;
@@ -19,11 +23,6 @@ private:
     Eigen::MatrixXf& X;
     Eigen::MatrixXf& Y;
     bool shuffle;
-
-    struct Batch{
-        Eigen::MatrixXf batchX;
-        Eigen::MatrixXf batchY;
-    };
     std::vector<Batch&> Batches;
 
 public:
