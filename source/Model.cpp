@@ -1,65 +1,99 @@
-#include "Model.h"
-#include "Dataset.h"
-#include "Optimizer.h"
-Model::Model(int nInputs, int nOutputs,Dataset& ds): numInputs(nInputs), numOutputs(nOutputs), dataset(ds){}
+#include "Layers.h"
+#include <random>
+#include <stdexcept>
+#include <cmath>
 
-void Model::setTraining(bool mode){ this->isTraining = mode; }
+static std::random_device rd;
+static std::mt19937 gen(rd());
 
-Eigen::MatrixXf& Model::forward(Eigen::MatrixXf& X){
-    if (X.rows()!= 1 || X.cols() != this->numInputs){
-        throw std::invalid_argument("Shape mismatch\n");
-    }
-    Eigen::MatrixXf Y;
-    for(auto& layer:Layers){
-        Y = layer->forward(X);
-    } 
-    Output = Y;
-    return Y;
+void Layer::setTraining(bool mode) {
+    isTraining = mode;
 }
 
-float Model::calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y){
-    switch(lossType){
-    case Loss::MSE:
-        return MSE(Y, Ypred);
-    
-    case Loss::MAE:
-        return MAE(Y,Ypred);
+Linear::Linear(int nInputs, int nOutputs, float dropout)
+    : dropout(dropout) {
+    float limit = std::sqrt(6.0f / (nInputs + nOutputs));
+    std::uniform_real_distribution<float> dist(-limit, limit);
 
-    case Loss::BINARY_CROSS_ENTROPY:
-        return BinaryCE(Y,Ypred);
+    W = Eigen::MatrixXf::NullaryExpr(nOutputs, nInputs, [&]() { return dist(gen); });
+    B = Eigen::MatrixXf::Zero(nOutputs, 1);
 
-    case Loss::CATEGORICAL_CROSS_ENTROPY:
-        return MultiCE(Y,Ypred);
-    
-    default:
-        throw std::invalid_argument("Loss    type must be from MSE, MAE, BINARY_CROSS_ENTROPY or CATEGORICAL_CROSS_ENTROPY");
-    }
+    wGrad = Eigen::MatrixXf::Zero(nOutputs, nInputs);
+    bGrad = Eigen::MatrixXf::Zero(nOutputs, 1);
 }
 
-std::vector<std::shared_ptr<Layer>>& Model::getLayers(){
-    return this->Layers;
+void Linear::applyDropout(Eigen::MatrixXf& Z) {
+    if (dropout <= 0.0f) return;
+    std::bernoulli_distribution dist(1.0f - dropout);
+    auto bernoulli = [&]() { return dist(gen); };
+    dropoutMask = Eigen::MatrixXf::NullaryExpr(Z.rows(), Z.cols(), bernoulli).cast<float>();
+    Z = Z.cwiseProduct(dropoutMask);
 }
 
-void Model::backward(size_t batchIdx){
-    Eigen::MatrixXf grad;
-    switch(lossType){
-        case Loss::MSE:
-            grad =  MSEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
-            break;
-        case Loss::MAE:
-            grad = MAEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
-            break;
-        case Loss::BINARY_CROSS_ENTROPY:
-            grad = BinaryCEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
-            break;
-        case Loss::CATEGORICAL_CROSS_ENTROPY:
-            grad = MultiCEgrad(Output, dataset.getBatch(batchIdx).batchY, dataset.getBatchSize());
-            break;
-        default:
-            throw std::invalid_argument("Loss type must be from MSE, MAE, BINARY_CROSS_ENTROPY or CATEGORICAL_CROSS_ENTROPY");
+Eigen::MatrixXf& Linear::forward(const Eigen::MatrixXf& input) {
+    if (input.rows() != W.cols()) {
+        throw std::invalid_argument(
+            "Linear::forward - Expected input rows = " + std::to_string(W.cols()) +
+            ", got " + std::to_string(input.rows())
+        );
     }
-    for(size_t i = numLayers-1; i>=0; --i){
-        grad = Layers[i]->backward(grad);
-    }
-    
+
+    inputCache = input;
+    Eigen::MatrixXf Z = (W * input).colwise() + B.col(0);
+    output = Z;
+    return output;
 }
+
+Eigen::MatrixXf Linear::backward(const Eigen::MatrixXf& gradOutput){
+    wGrad = gradOutput * inputCache.transpose();
+    bGrad = gradOutput.rowwise().sum();
+    return W.transpose() * gradOutput;
+}
+std::vector<Eigen::MatrixXf*> Linear::getParameters() {
+    return {&W, &B};
+}
+
+std::vector<Eigen::MatrixXf*> Linear::getGradients() {
+    return {&wGrad, &bGrad};
+}
+
+bool Linear::isTrainable() const{ return istrainable;}
+
+Eigen::MatrixXf& ReLU::forward(const Eigen::MatrixXf& input) {
+    inputCache = input;
+    this->output = input.array().max(0.0f);
+    return this->output;
+}
+
+Eigen::MatrixXf ReLU::backward(const Eigen::MatrixXf& gradOutput) {
+    return gradOutput.array() * (output.array() > 0.0f).cast<float>();
+}
+
+bool ReLU::isTrainable()const { return istrainable; }
+
+Eigen::MatrixXf& Sigmoid::forward(const Eigen::MatrixXf& input) {
+    inputCache = input;
+    output = input.unaryExpr([](float x) {
+        if (x >= 0) return 1.0f / (1.0f + std::exp(-x));
+        float expX = std::exp(x);
+        return expX / (1.0f + expX);
+    });
+    return output;
+}
+
+Eigen::MatrixXf Sigmoid::backward(const Eigen::MatrixXf& gradOutput){
+    auto sig = output.array();
+    return gradOutput.array() * (sig * (1 - sig));
+}
+bool Sigmoid::isTrainable()const { return istrainable; }
+
+Eigen::MatrixXf& Tanh::forward(const Eigen::MatrixXf& input) {
+    inputCache = input;
+    output = input.array().tanh();
+    return output;
+}
+
+Eigen::MatrixXf Tanh::backward(const Eigen::MatrixXf& gradOutputs){
+    return gradOutputs.array() * (1 - output.array().square());
+}
+bool Tanh::isTrainable()const { return istrainable; }
