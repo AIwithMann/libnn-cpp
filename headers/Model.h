@@ -5,6 +5,7 @@
 #include "Layers.h"
 #include "Loss.h"
 #include "Dataset.h"
+#include "Optimizer.h"
 #include<memory>
 #include<string>
 #include<any>
@@ -19,12 +20,12 @@ private:
     float loss;
     Dataset& dataset;
     Loss lossType;
-    void backward();
-    void updateParams();
+    Trainables trainables;
+    
+    Optimizers optim;
 public:
     Model(int nInputs, int nOutputs, Dataset& ds);
     void setTraining(bool mode);
-    void train(int epochs);
     Eigen::MatrixXf& forward(Eigen::MatrixXf& X);
     float calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y);
     void backward(size_t batchIdx);
@@ -33,4 +34,8 @@ public:
     int getNumLayers();
     int getNumInputs();
     int getOutputs();
+    void backward();
+    void updateParams(float lr, float Beta);
+    Trainables& getTrainables();
 };
+
