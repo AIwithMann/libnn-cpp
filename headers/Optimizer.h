@@ -22,6 +22,8 @@ struct ParamState{
     Eigen::MatrixXf v;
     Eigen::MatrixXf m;
     Eigen::MatrixXf u;
+    Eigen::MatrixXf G;
+    int t;
 };
 
 class Optimizer{
@@ -59,4 +61,34 @@ public:
     NAG(float lr, float beta, Trainables& trainables, Model& model);
     void init_state();
     void update(Batch& batch);
+};
+
+class ADAGRAD: public Optimizer{
+    float lr;
+    Trainables& trainables;
+public:
+    ADAGRAD(float lr, Trainables& trainables);
+    void init_state();
+    void update();
+};
+
+class RMSPROP: public Optimizer{
+    float lr;
+    float dRate;
+    Trainables& trainables;
+public:
+    RMSPROP(float lr, float dRate, Trainables& Trainables);
+    void init_state();
+    void update();
+};
+
+class ADAM: public Optimizer{
+    float lr; 
+    float Beta1;
+    float Beta2;
+    Trainables& trainables;
+public:
+    ADAM(float lr, float Beta1, float Beta2, Trainables& trainables);
+    void init_state();
+    void update();
 };
