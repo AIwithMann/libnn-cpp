@@ -19,7 +19,7 @@ int Dataset::getBatchSize() const {
     return batchSize;
 }
 
-Dataset::Batch Dataset::getBatch(int batchidx) const {
+Batch Dataset::getBatch(int batchidx) const {
     int startIdx = batchidx * batchSize;
     int endIdx = std::min(startIdx + batchSize, numSamples);
     int actualBatchSize = endIdx - startIdx;
