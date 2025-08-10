@@ -57,8 +57,11 @@ public:
 };
 
 class Dropout: public Layer{
+private:
+    Eigen::MatrixXf mask;
+    float p;
 public: 
     bool isTrainable() const{ return false;}
-    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input);
+    Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) override;
     Eigen::MatrixXf backward(Eigen::MatrixXf& gradOutput) override;
 };
