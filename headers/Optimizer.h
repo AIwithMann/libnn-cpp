@@ -27,6 +27,7 @@ struct ParamState{
 };
 
 class Optimizer{
+friend class Model;
 protected:
     State state;
 public:
