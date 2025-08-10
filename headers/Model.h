@@ -22,20 +22,19 @@ private:
     Loss lossType;
     Trainables trainables;
     
-    Optimizers optim;
+    std::shared_ptr<Optimizer> optim;   
 public:
     Model(int nInputs, int nOutputs, Dataset& ds);
     void setTraining(bool mode);
     Eigen::MatrixXf& forward(Eigen::MatrixXf& X);
     float calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y);
     void backward(size_t batchIdx);
-    float lossGradient(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y);
+    Eigen::MatrixXf lossGradient(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y);
     std::vector<std::shared_ptr<Layer>>& getLayers();
     int getNumLayers();
     int getNumInputs();
-    int getOutputs();
-    void backward();
-    void updateParams(float lr, float Beta);
+    int getNumOutputs();
+    void updateParams();
     Trainables& getTrainables();
 };
 
