@@ -24,7 +24,7 @@ private:
     
     std::shared_ptr<Optimizer> optim;   
 public:
-    Model(int nInputs, int nOutputs, Dataset& ds);
+    Model(int nInputs, int nOutputs, Dataset& ds, Optimizers optimType, Loss lt);
     void setTraining(bool mode);
     Eigen::MatrixXf& forward(Eigen::MatrixXf& X);
     float calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y);
@@ -36,5 +36,6 @@ public:
     int getNumOutputs();
     void updateParams();
     Trainables& getTrainables();
+    void addLayer(std::shared_ptr<Layer> l);
 };
 
