@@ -13,7 +13,7 @@ public:
     virtual ~Layer() = default;
 
     virtual void setTraining(bool mode);
-    virtual bool isTrainable();
+    virtual bool isTrainable() const;
     virtual Eigen::MatrixXf& forward(const Eigen::MatrixXf& input) = 0;
     virtual Eigen::MatrixXf backward(Eigen::MatrixXf& gradOutput) = 0;
     virtual std::vector<Eigen::MatrixXf*> getParameters();
