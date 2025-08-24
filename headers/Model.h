@@ -1,3 +1,4 @@
+#pragma once
 #include<iostream>
 #include<vector>
 #include<Eigen/Dense>
@@ -9,6 +10,11 @@
 #include<memory>
 #include<string>
 #include<any>
+#include "Types.h"
+
+class Optimizer;
+enum class Optimizers;
+
 class Model{
 private:
     int numLayers;
@@ -21,8 +27,7 @@ private:
     Dataset& dataset;
     Loss lossType;
     Trainables trainables;
-    
-    std::shared_ptr<Optimizer> optim;   
+    std::shared_ptr<Optimizer> optim;  
 public:
     Model(int nInputs, int nOutputs, Dataset& ds, Optimizers optimType, Loss lt);
     void setTraining(bool mode);
@@ -37,5 +42,5 @@ public:
     void updateParams();
     Trainables& getTrainables();
     void addLayer(std::shared_ptr<Layer> l);
+    void train(int epochs, bool showStates =true);
 };
-
