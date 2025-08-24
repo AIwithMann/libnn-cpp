@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <Eigen/Dense>
 
 enum class Loss{
