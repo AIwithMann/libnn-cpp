@@ -2,22 +2,37 @@
 #include "Dataset.h"
 #include "Loss.h"
 
-Model::Model(int nInputs, int nOutputs,Dataset& ds): numInputs(nInputs), numOutputs(nOutputs), dataset(ds){}
+Model::Model(int nInputs, int nOutputs,Dataset& ds, Optimizers optimType, Loss lt): numInputs(nInputs), numOutputs(nOutputs), dataset(ds), lossType(lt){
+    switch(optimType){
+        case Optimizers::SGD:
+            optim = std::make_shared<SGD>();
+            break;
+        case Optimizers::RMSPROP:
+            optim = std::make_shared<RMSPROP>();
+            break;
+        case Optimizers::MOMENTUM:
+            optim = std::make_shared<Momentum>();
+            break;
+        case Optimizers::ADAM:
+            optim = std::make_shared<ADAM>();
+            break;
+        case Optimizers::ADAGRAD:
+            optim = std::make_shared<ADAGRAD>();
+            break;
+    }
+}
 
 void Model::setTraining(bool mode){ this->isTraining = mode; }
 
-Eigen::MatrixXf& Model::forward(Eigen::MatrixXf& X){
-    if (X.rows()!= 1 || X.cols() != this->numInputs){
-        throw std::invalid_argument("Shape mismatch\n");
+Eigen::MatrixXf& Model::forward(Eigen::MatrixXf& X) {
+    if (X.rows()!= 1 || X.cols() != numInputs) throw std::runtime_error("Shape mismatch");
+    Eigen::MatrixXf* current = &X;
+    for(auto& layer: Layers){
+        current = &layer->forward(*current);
     }
-    Eigen::MatrixXf Y;
-    for(auto& layer:Layers){
-        Y = layer->forward(X);
-    } 
-    Output = Y;
-    return Y;
+    Output = *current;
+    return Output;
 }
-
 float Model::calculateLoss(Eigen::MatrixXf& Ypred, Eigen::MatrixXf& Y){
     switch(lossType){
     case Loss::MSE:
@@ -100,15 +115,41 @@ int Model::getNumOutputs(){return numOutputs;}
 
 void Model::updateParams(){
     if (optim->state[0].t == 0){
-        optim->init_state(*this);
-        optim->state[0].t++;
-        optim->update();
+        optim->init_state();
+        optim->updateParams();
+        for (auto& [param, state]: optim->state){
+            state.t++;
+        }
     }
     else if(optim->state[0].t > 0){
-        optim->update();
+        optim->updateParams();
+        optim->state[0].t++;
+        for (auto& [param,state]: optim->state){
+            state.t++;
+        }
     }
     else{
         throw std::runtime_error("Optimizer state not initialized");
     }
 }
 
+void Model::addLayer(std::shared_ptr<Layer> l){
+    Layers.push_back(l);
+    numLayers++;
+}
+
+void Model::train(int epochs, bool showStats ){
+    if (!isTraining) throw std::runtime_error("Model not in training mode");
+
+    for(int i = 0; i < epochs; i++){
+        dataset.shuffleData();
+        for(int i = 0; i < (dataset.getNumSamples()/dataset.getBatchSize()); i++){
+            Batch batch = dataset.getBatch(i);
+            Eigen::MatrixXf out = forward(batch.batchX);
+            float loss = calculateLoss(out, batch.batchY);
+            backward(dataset.getBatchSize());
+            updateParams();
+            if(showStats) std::cout << "loss: " << loss << "\n";
+        }
+    }
+}
