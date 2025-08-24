@@ -4,7 +4,7 @@
 #include <random>
 #include <algorithm>
 
-bool shapeMismatch(const Eigen::MatrixXf& X, Eigen::MatrixXf& Y) {
+bool shapeMismatch(const Eigen::MatrixXf& X, const Eigen::MatrixXf& Y) {
     return X.rows() != Y.rows();
 }
 
@@ -49,3 +49,6 @@ void Dataset::shuffleData(std::optional<unsigned int> seed) {
     Y = yShuffled;
 }
 
+int Dataset::getNumSamples() const{
+    return numSamples;
+}
