@@ -86,7 +86,7 @@ Eigen::MatrixXf Tanh::backward(Eigen::MatrixXf& gradOutputs){
 
 Eigen::MatrixXf& Dropout::forward(const Eigen::MatrixXf& input){
     inputCache = input;
-    Eigen::MatrixXf mask = (Eigen::MatrixXf::Random(input.rows(), input.cols()).array()+1.0f)/2.0f;
+    mask = (Eigen::MatrixXf::Random(input.rows(), input.cols()).array()+1.0f)/2.0f;
     mask = (mask.array() < p).select(
         Eigen::MatrixXf::Zero(mask.rows(), mask.cols()).array(),
         Eigen::MatrixXf::Ones(mask.rows(), mask.cols()).array() / (1.0f - p)
@@ -98,3 +98,4 @@ Eigen::MatrixXf& Dropout::forward(const Eigen::MatrixXf& input){
 Eigen::MatrixXf Dropout::backward(Eigen::MatrixXf& gradOutput){
     return gradOutput.array() * mask.array();
 }
+
