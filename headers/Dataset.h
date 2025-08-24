@@ -20,10 +20,10 @@ private:
     int numSamples;
     int numClasses;
     int batchSize;
-    Eigen::MatrixXf& X;
-    Eigen::MatrixXf& Y;
+    Eigen::MatrixXf X;
+    Eigen::MatrixXf Y;
     bool shuffle;
-    std::vector<Batch&> Batches;
+    std::vector<Batch> Batches;
 
 public:
     Dataset(const Eigen::MatrixXf Samples, const Eigen::MatrixXf Labels, bool Shuffle, int batchS);
