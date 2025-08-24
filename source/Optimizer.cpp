@@ -1,17 +1,28 @@
-#include "Optimizer.h"
-#include "Model.h"
+#include "/home/aiwithmann/Desktop/Forever-Beta/libnn-cpp/headers/Optimizer.h"
+#include "/home/aiwithmann/Desktop/Forever-Beta/libnn-cpp/headers/Model.h"
 
 
-SGD::SGD(float lr, Trainables& trainables): lr(lr), trainables(trainables){}
+SGD::SGD(){}
 
-void SGD::update(){
+void SGD::initialize(float lr, Trainables& trainables){
+    this->lr = lr;
+    this->trainables = trainables;
+}
+
+void SGD::updateParams(){
     for(auto& [param, grad]: trainables){
         *param -= lr * *grad;
         grad->setZero();
     }
 }
 
-Momentum::Momentum(float lr, float beta, Trainables& trainables): lr(lr), beta(beta), trainables(trainables){}
+Momentum::Momentum(){}
+
+void Momentum::initialize(float lr, float beta, Trainables& trainables){
+    this->lr = lr;
+    this->beta = beta;
+    this->trainables = trainables;
+}
 
 void Momentum::init_state(){
     for(auto& [param, grad]: trainables){
@@ -20,15 +31,8 @@ void Momentum::init_state(){
         state[param] = std::move(ps);
     }
 }
-void Momentum::init_state(){
-    for (auto& [param,grad]: trainables){
-        ParamState ps;
-        ps.v = Eigen::MatrixXf::Zero(param->rows(), param->cols());
-        state[param] = ps;
-    }
-}
 
-void Momentum::update(){
+void Momentum::updateParams(){
     for (auto& [param, grad] : trainables) {
         auto& ps = state[param];
         ps.v = beta * ps.v + *grad;
@@ -37,39 +41,12 @@ void Momentum::update(){
     }
 }
 
+ADAGRAD::ADAGRAD(){}
 
-NAG::NAG(float lr, float beta, Trainables& trainables, Model& model): lr(lr), beta(beta), trainables(trainables), model(model){}
-
-void NAG::init_state(){
-    for (auto& [param,grad]:trainables){
-        ParamState ps;
-        ps.v = Eigen::MatrixXf::Zero(param->rows(), param->cols());
-        state[param] = ps;
-    }
+void ADAGRAD::initialize(float lr, Trainables& trainables){
+    this->lr = lr;
+    this->trainables = trainables;
 }
-
-void NAG::update(Batch& batch){
-    std::vector<Eigen::MatrixXf> ACTUAL;
-    for(auto& [param, grad] : trainables){
-        ACTUAL.push_back(*param);
-        auto& ps = state[param];
-        *param -= beta* ps.v;
-    
-    }
-    model.forward(batch.batchX);
-    model.backward(batch.batchSize);
-    int i = 0;
-    for(auto& [param, grad] : trainables){
-        auto& ps = state[param];
-        *param = ACTUAL[i];
-        ps.v = beta * ps.v + *grad;
-        *param -= lr * ps.v;
-        grad->setZero();
-        i++;
-    }
-}
-
-ADAGRAD::ADAGRAD(float lr, Trainables& trainables): lr(lr), trainables(trainables){}
 
 void ADAGRAD::init_state(){
     for (auto& [param, grad]: trainables){
@@ -79,16 +56,22 @@ void ADAGRAD::init_state(){
     }
 }
 
-void ADAGRAD::update(){
+void ADAGRAD::updateParams(){
     for(auto& [param,grad] : trainables){
         auto& ps = state[param];
-        ps.G += *grad * *grad;
-        *param -= lr * *grad / (ps.G.array().sqrt() + 1e-7);
+        ps.G.array() +=grad->array().square();
+        param->array() -= lr * grad->array() / (ps.G.array().sqrt()+1e-7f);
         grad->setZero();
     }
 }   
 
-RMSPROP::RMSPROP(float lr, float dRate, Trainables& trainables): lr(lr), dRate(dRate), trainables(trainables){}
+RMSPROP::RMSPROP(){}
+
+void RMSPROP::initialize(float lr, float dRate, Trainables& trainables){
+    this->lr = lr;
+    this->dRate = dRate;
+    this->trainables = trainables;
+}
 
 void RMSPROP::init_state(){
     for(auto& [param,grad]: trainables){
@@ -98,17 +81,24 @@ void RMSPROP::init_state(){
     }
 }
 
-void RMSPROP::update(){
+void RMSPROP::updateParams(){
     for(auto& [param, grad]: trainables){
         auto& ps = state[param];
         ps.G = dRate * ps.G.array() + (1 - dRate) * grad->array().square();
         auto denom = (ps.G.array() + 1e-7).sqrt();
-        *param -= lr * grad->array() / denom;
+        param->array() -= lr * grad->array() / denom;
         grad->setZero();
     }
 }
 
-ADAM::ADAM(float lr, float Beta1, float Beta2, Trainables& trainables):lr(lr), Beta1(Beta1), Beta2(Beta2), trainables(trainables){}
+ADAM::ADAM(){}
+
+void ADAM::initialize(float lr, float Beta1, float Beta2, Trainables& trainables){
+    this->lr = lr;
+    this->Beta1 = Beta1;
+    this->Beta2 = Beta2;
+    this->trainables = trainables;
+}
 
 void ADAM::init_state(){
     for (auto& [param, grad]: trainables){
@@ -119,15 +109,15 @@ void ADAM::init_state(){
     }
 }
 
-void ADAM::update(){
+void ADAM::updateParams(){
     for(auto& [param, grad]: trainables){
         auto& ps = state[param];
-        ps.m = Beta1 * ps.m + (1 - Beta1) * grad->array();
-        ps.u = Beta2 * ps.u + (1 - Beta2) * grad->array().square();
+        ps.m = Beta1 * ps.m.array() + (1 - Beta1) * grad->array();
+        ps.u = Beta2 * ps.u.array() + (1 - Beta2) * grad->array().square();
         ps.t++;
         ps.m /= 1 - std::pow(Beta1, ps.t);
         ps.u /= 1 - std::pow(Beta2, ps.t);
-        *param -= lr * ps.m / (ps.u.array().sqrt() + 1e-7);
+        param->array() -= lr * ps.m.array() / (ps.u.array().sqrt() + 1e-7);
         grad->setZero();
     }
 }
